@@ -1,0 +1,303 @@
+"pcatid"	"hsn_code"	"gst"
+1	"1234"	18
+2	"5678"	18
+3	"9101"	12
+4	"1121"	5
+5	"3456"	10
+6	"7890"	14
+7	"2345"	8
+
+
+
+
+"pcatid"	"pcatname"
+1	"Shirts"
+2	"Watches"
+3	"Phones"
+4	"T-Shirts"
+5	"pants"
+6	"Electronics"
+7	"Formal_shirts"
+
+
+"order_id"	"customer_id"	"order_date"	"order_amount"	"order_status"
+1	101	"2023-07-30"	100.50	"Completed"
+2	102	"2023-07-31"	75.20	"Processing"
+3	103	"2023-08-01"	230.80	"Completed"
+4	104	"2023-08-02"	50.00	"Cancelled"
+5	105	"2023-08-03"	350.00	"Completed"
+6	106	"2023-08-04"	200.75	"Processing"
+7	107	"2023-08-05"	75.90	"Completed"
+8	108	"2023-08-06"	120.30	"Processing"
+9	109	"2023-08-07"	90.50	"Completed"
+10	110	"2023-08-08"	60.00	"Completed"
+11	111	"2023-08-09"	180.25	"Processing"
+12	112	"2023-08-10"	300.10	"Processing"
+13	113	"2023-08-11"	40.75	"Completed"
+14	114	"2023-08-12"	90.90	"Completed"
+15	115	"2023-08-13"	175.40	"Processing"
+16	116	"2023-08-14"	220.70	"Processing"
+17	117	"2023-08-15"	80.20	"Completed"
+18	118	"2023-08-16"	120.80	"Completed"
+19	119	"2023-08-17"	65.25	"Processing"
+20	120	"2023-08-18"	150.00	"Processing"
+
+
+
+
+"pid"	"pname"	"price"	"hsn_code"	"pcatid"	"image"
+1	"Formal Shirt"	799	"1234"	1	"formal_shirt_image.jpg"
+2	"Casual Shirt"	699	"1234"	1	"casual_shirt_image.jpg"
+3	"Analog Watch"	1999	"5678"	2	"analog_watch_image.jpg"
+4	"Smart Watch"	2999	"5678"	2	"smart_watch_image.jpg"
+5	"Smartphone"	14999	"9101"	3	"smartphone_image.jpg"
+6	"Feature Phone"	4999	"9101"	3	"feature_phone_image.jpg"
+7	"Graphic Tee"	399	"1121"	4	"graphic_tee_image.jpg"
+8	"Plain Tee"	299	"1121"	4	"plain_tee_image.jpg"
+11	"jeans"	1299	"3456"	5	"jeans.jpg"
+12	"blackjean"	999	"3456"	5	"blackjean.jpg"
+13	"fridge"	22000	"7890"	6	"fridge.jpg"
+14	"macbook"	98000	"7890"	6	"macbook.jpg"
+9	"blueshirt"	599	"2345"	7	"blueshirt.jpg"
+10	"blackshirt"	899	"2345"	7	"blackshirt.jpg"
+
+
+
+select * from h_pcategory
+select * from h_oproducts
+select * from h_orders
+select * from h_products
+select * from h_customers;
+select * from h_hsncode;
+
+insert into h_pcategory values(6,'Electronics')
+
+insert into h_pcategory values(7,'Formal_shirts')
+
+insert into h_products values(14,'macbook',98000,7890,6,'macbook.jpg')
+
+insert into h_hsncode values(5,'3456',10),(6,'7890',14),(7,'2345',8)
+
+update h_products set hsn_code='2345' where pcatid=7
+
+select pname,price,image,pcatname from h_products hp join h_pcategory hc on hp.pcatid=hc.pcatid where hp.pcatid=5;
+
+select pcatname as catigory from h_pcategory hc where pcatid in (5,6,7)
+
+
+
+
+create or replace function getAllProd()
+	RETURNS TABLE (
+		pname character varying,
+		price numeric,
+		image character varying
+	) as $$ 
+	begin 
+		return query select hp.pname,hp.price,hp.image from h_products hp join h_pcategory hc on hp.pcatid=hc.pcatid where hp.pcatid in (5,6,7);
+	end ;	
+	$$ LANGUAGE plpgsql;
+	
+	
+	create or replace function getAllCat()
+	RETURNS TABLE (
+		catigory character varying
+	) as $$ 
+	begin 
+		return query select pcatname as catigory from h_pcategory where pcatid in (5,6,7);
+	end ;	
+	$$ LANGUAGE plpgsql;
+
+
+create or replace function getAllProd(val integer)
+	RETURNS TABLE (
+		pname character varying,
+		price numeric,
+		image character varying,
+		pid integer
+	) as $$ 
+	begin 
+		return query select hp.pname,hp.price,hp.image,hp.pid from h_products hp join h_pcategory hc on hp.pcatid=hc.pcatid where hp.pcatid=val;
+	end ;	
+	$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION getCartProd(val INTEGER[])
+    RETURNS TABLE (
+        pid INTEGER,
+        price NUMERIC,
+        gst INTEGER
+    ) AS $$ 
+BEGIN 
+    RETURN QUERY SELECT hp.pid, hp.price, hs.gst 
+                 FROM h_products hp 
+                 JOIN h_hsncode hs ON hp.pcatid = hs.pcatid 
+                 WHERE hp.pid = ANY(val);
+END;	
+$$ LANGUAGE plpgsql;
+
+SELECT * FROM getCartProd('{11,12}');
+
+select * from orders25;
+
+create table orders25(
+	orderid serial primary key,
+	order_date date,
+	price bigint,
+	custid int 
+)
+
+create or replace function createOrder(cdate date, price double precision, customer_id int)
+returns table(
+	orderid int,
+	created_date date,
+	totalprice double precision,
+	custid int
+)
+as $$
+begin
+return query
+insert into orders25(order_date,price,custid)
+values(cdate, price, customer_id)
+returning *;
+end;
+$$ language plpgsql;
+
+select * from orders25
+
+ALTER TABLE orders25
+ALTER COLUMN price TYPE DOUBLE PRECISION;
+
+DROP FUNCTION createorder(date,double precision,integer)
+
+create or replace function createOrderProduct(orderid int, prodid int, quantity int, price double precision)
+returns void
+as $$
+begin
+insert into orderproducts25 values(orderid, prodid, quantity, price);
+end 
+$$ language plpgsql
+
+create table orderproducts25(
+	orderid int,
+	prodid int,
+	quantity int,
+	price double precision
+)
+
+select * from orderproducts25
+
+delete from orderproducts25
+delete from orders25
+
+
+
+.item-card img {
+    width: 100px;
+    height: 150px; 
+    display: block; 
+    margin: 0 auto; 
+}
+
+CREATE TABLE ShippmentCharges_192 (
+    orvl_id INT PRIMARY KEY,
+    orvl_from NUMERIC,
+    orvl_to NUMERIC,
+    orvl_shippingamount NUMERIC
+);
+
+INSERT INTO ShippmentCharges_192 (orvl_id, orvl_from, orvl_to, orvl_shippingamount) 
+VALUES
+    (1, 0, 1000, 250),
+    (2, 1001, 2000, 300),
+    (3, 2001, 3000, 350),
+    (4, 3001, 4000, 400),
+    (5, 4001, 5000, 450);
+    
+    
+    
+    
+    select * from h_hsncode
+select * from h_products
+
+update h_hsncode
+set gst=7
+where pcatid=7
+
+select * from orders25
+select * from orderproducts25
+delete from orders25
+delete from orderproducts25
+
+alter table h_products
+drop column discount 
+select * from h_pcategory
+
+ALTER TABLE h_products ALTER COLUMN pcatid  DROP NOT NULL;
+
+insert into h_products(discount)
+values (10),(10),(10),(10),(10),(10),(10),(10),(10),(10),(10),(10),(10),(10);
+
+delete from h_products where pid=16
+select * from productcategorywiseserviceableregions
+
+ALTER TABLE productcategorywiseserviceableregions DROP CONSTRAINT constraint_name;
+
+delete from productcategorywiseserviceableregions
+
+CREATE TABLE discount (
+    pid INT,
+    discount_amount INT,
+    FOREIGN KEY (pid) REFERENCES h_products(pid)
+);
+
+
+INSERT INTO discount (pid, discount_amount)
+VALUES
+(9, 10),
+(10, 11),
+(11,12),
+(12,13),
+(13,14),
+(14, 15);
+
+select * from discount
+
+ALTER TABLE discount
+RENAME COLUMN discount_amount TO discount_percentage;
+
+select * from ServiceableRegions_192
+select * from ProductCategoryWiseServiceableRegions
+select * from discount
+INSERT INTO ProductCategoryWiseServiceableRegions (prct_id, srrg_id)
+VALUES
+(5, 2),
+(5, 3),
+(6, 1),
+(6, 3),
+(7, 1),
+(7,2)
+
+CREATE OR REPLACE FUNCTION getCheckOutProd(val INTEGER[])
+    RETURNS TABLE (
+		pid integer,
+        pname character varying,
+        price NUMERIC,
+        gst INTEGER,
+		discount_percentage integer
+    ) AS $$ 
+BEGIN 
+    RETURN QUERY SELECT hp.pid, hp.pname, hp.price, hs.gst, d.discount_percentage
+                 FROM h_products hp 
+                 JOIN h_hsncode hs ON hp.pcatid = hs.pcatid 
+					JOIN discount d ON hp.pid = d.pid
+                 WHERE hp.pid = ANY(val);
+END;	
+$$ LANGUAGE plpgsql;
+DROP FUNCTION getcheckoutprod(integer[])
+SELECT hp.pname, hp.price, hs.gst, d.discount_percentage
+                 FROM h_products hp 
+                 JOIN h_hsncode hs ON hp.pcatid = hs.pcatid 
+					JOIN discount d ON hp.pid = d.pid
+                 WHERE hp.pid = 9;
+    
